@@ -31,7 +31,6 @@ class HusqvarnaAutomower extends utils.Adapter {
 		this.on('unload', this.onUnload.bind(this));
 
 		this.access_token = null;
-		this.refresh_token = null;
 		this.mowerData = null;
 
 		this.firstStart = true;
@@ -69,6 +68,7 @@ class HusqvarnaAutomower extends utils.Adapter {
 		this.log.debug('The configuration has been checked successfully. Trying to connect "Automower Connect API"...');
 
 		try {
+
 			// get Husqvarna access_token
 			await this.getAccessToken();
 
@@ -102,9 +102,9 @@ class HusqvarnaAutomower extends utils.Adapter {
 				this.log.debug(`[getAccessToken]: HTTP status response: ${response.status} ${response.statusText}; config: ${JSON.stringify(response.config)}; headers: ${JSON.stringify(response.headers)} ; data: ${JSON.stringify(response.data)}`);
 
 				this.access_token = response.data.access_token;
-				this.refresh_token = response.data.refresh_token;
 
 				this.log.info('"Husqvarna Authentication API Access token" received.');
+				this.log.debug('Access-Token: ' + this.access_token);
 			})
 			.catch((error) => {
 				if (error.response) {
@@ -119,36 +119,6 @@ class HusqvarnaAutomower extends utils.Adapter {
 				}
 				this.log.debug(`[getAccessToken]: error.config: ${JSON.stringify(error.config)}`);
 				throw new Error ('"Automower Connect API" not reachable. (ERR_#004)');
-			});
-	}
-
-	async getRefreshToken() {
-		await axios({
-			method: 'POST',
-			url: 'https://api.authentication.husqvarnagroup.dev/v1/oauth2/token',
-			data: `grant_type=refresh_token&client_id=${this.config.app_key}&refresh_token=${this.refresh_token}`
-		})
-			.then((response) => {
-				this.log.debug(`[getRefreshToken]: HTTP status response: ${response.status} ${response.statusText}; config: ${JSON.stringify(response.config)}; headers: ${JSON.stringify(response.headers)} ; data: ${JSON.stringify(response.data)}`);
-
-				this.access_token = response.data.access_token;
-				this.refresh_token = response.data.refresh_token;
-
-				this.log.debug('"Husqvarna Refresh API Access token" received.');
-			})
-			.catch((error) => {
-				if (error.response) {
-					// The request was made and the server responded with a status code that falls out of the range of 2xx
-					this.log.debug(`[getRefreshToken]: HTTP status response: ${error.response.status}; headers: ${JSON.stringify(error.response.headers)}; data: ${JSON.stringify(error.response.data)}`);
-				} else if (error.request) {
-					// The request was made but no response was received `error.request` is an instance of XMLHttpRequest in the browser and an instance of http.ClientRequest in node.js
-					this.log.debug(`[getRefreshToken]: error request: ${error}`);
-				} else {
-					// Something happened in setting up the request that triggered an Error
-					this.log.debug(`[getRefreshToken]: error message: ${error.message}`);
-				}
-				this.log.debug(`[getRefreshToken]: error.config: ${JSON.stringify(error.config)}`);
-				throw new Error ('"Automower Connect API" not reachable. (ERR_#005)');
 			});
 	}
 
@@ -1201,7 +1171,8 @@ class HusqvarnaAutomower extends utils.Adapter {
 				if (data === 1001 && this.wss.readyState === 3) {
 					await this.autoRestart();
 				} else if (data === 1006 && this.wss.readyState === 3) {
-					await this.getRefreshToken();
+					this.log.debug('Getting new access token')
+					await this.getAccessToken();
 					await this.autoRestart();
 				} else if (data.wasClean) {
 					this.log.info('Connection closed cleanly');

@@ -14,8 +14,7 @@ const WebSocket = require('ws');
 
 // variables
 const numberOfSchedules = 4;
-const isValidEmail = /^(([^<>()\\[\]\\.,;:\s@"]+(\.[^<>()\\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/; // https://emailregex.com/
-const isValidApiKey = /[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}/; // format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+const isValidKey = /[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}/; // format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 
 class HusqvarnaAutomower extends utils.Adapter {
 
@@ -53,22 +52,16 @@ class HusqvarnaAutomower extends utils.Adapter {
 		this.setState('info.connection', false, true);
 
 		// The adapters config (in the instance object everything under the attribute "native") is accessible via this.config:
-		this.log.debug(`config.username: ${this.config.username}`);
-		this.log.debug(`config.password: ${this.config.password}`);
-		this.log.debug(`config.apiKey: ${this.config.apiKey}`);
+		this.log.debug(`config.app_key: ${this.config.app_key}`);
+		this.log.debug(`config.app_secret: ${this.config.app_secret}`);
 
-		// check username: must be email-address
-		if (!isValidEmail.test(this.config.username)) {
-			this.log.error('"Username" is not a valid email-address (ERR_#001)');
+		// check Application Key: allowed format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+		if (!isValidKey.test(this.config.app_key)) {
+			this.log.error('"API-Key" is not valid (allowed format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) (ERR_#003)');
 			return;
 		}
-		// check password: >= 5 letters
-		if (this.config.password.length <= 5) {
-			this.log.error('"Password" is not valid (<= 5 letters) (ERR_#002)');
-			return;
-		}
-		// check API-Key: allowed format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-		if (!isValidApiKey.test(this.config.apiKey)) {
+		// check Application Secret: allowed format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+		if (!isValidKey.test(this.config.app_secret)) {
 			this.log.error('"API-Key" is not valid (allowed format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) (ERR_#003)');
 			return;
 		}
@@ -103,7 +96,7 @@ class HusqvarnaAutomower extends utils.Adapter {
 		await axios({
 			method: 'POST',
 			url: 'https://api.authentication.husqvarnagroup.dev/v1/oauth2/token',
-			data: `grant_type=password&client_id=${this.config.apiKey}&username=${this.config.username}&password=${this.config.password}`
+			data: `grant_type=client_credentials&client_id=${this.config.app_key}&client_secret=${this.config.app_secret}`
 		})
 			.then((response) => {
 				this.log.debug(`[getAccessToken]: HTTP status response: ${response.status} ${response.statusText}; config: ${JSON.stringify(response.config)}; headers: ${JSON.stringify(response.headers)} ; data: ${JSON.stringify(response.data)}`);
@@ -133,7 +126,7 @@ class HusqvarnaAutomower extends utils.Adapter {
 		await axios({
 			method: 'POST',
 			url: 'https://api.authentication.husqvarnagroup.dev/v1/oauth2/token',
-			data: `grant_type=refresh_token&client_id=${this.config.apiKey}&refresh_token=${this.refresh_token}`
+			data: `grant_type=refresh_token&client_id=${this.config.app_key}&refresh_token=${this.refresh_token}`
 		})
 			.then((response) => {
 				this.log.debug(`[getRefreshToken]: HTTP status response: ${response.status} ${response.statusText}; config: ${JSON.stringify(response.config)}; headers: ${JSON.stringify(response.headers)} ; data: ${JSON.stringify(response.data)}`);
@@ -166,7 +159,7 @@ class HusqvarnaAutomower extends utils.Adapter {
 			url: 'https://api.amc.husqvarna.dev/v1/mowers',
 			headers: {
 				'Authorization': `Bearer ${this.access_token}`,
-				'X-Api-Key': this.config.apiKey,
+				'X-Api-Key': this.config.app_key,
 				'Authorization-Provider': 'husqvarna'
 			}
 		})
@@ -1267,7 +1260,7 @@ class HusqvarnaAutomower extends utils.Adapter {
 				url: `https://api.authentication.husqvarnagroup.dev/v1/token/${this.access_token}`,
 				method: 'DELETE',
 				headers: {
-					'X-Api-Key': this.config.apiKey,
+					'X-Api-Key': this.config.app_key,
 					'Authorization-Provider': 'husqvarna'
 				}
 			})
@@ -1466,7 +1459,7 @@ class HusqvarnaAutomower extends utils.Adapter {
 					url: `https://api.amc.husqvarna.dev/v1/mowers/${mowerId}/${url}`,
 					headers: {
 						'Authorization': `Bearer ${this.access_token}`,
-						'X-Api-Key': this.config.apiKey,
+						'X-Api-Key': this.config.app_key,
 						'Authorization-Provider': 'husqvarna',
 						'Content-Type': 'application/vnd.api+json'
 					},

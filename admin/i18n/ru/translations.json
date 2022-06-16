@@ -1,9 +1,8 @@
 {
-    "username": "имя пользователя",
-    "usernameHint": "например email@example.com",
-    "password": "пароль",
-    "passwordHint": "ваш пароль «Husqvarna Automower Connect» (не менее 5 символов)",
+    "app_key": "Application Key",
+    "app_secret": "Application Secret",
     "apiKey": "API-ключ",
-    "apiKeyHint": "Получите 'Husqvarna Automower Connect API-KEY' <a href='https://developer.husqvarnagroup.cloud' target='_blank'>здесь</a>. ",
+    "app_key_hint": "Получите 'Husqvarna Automower Connect Application Key' <a href='https://developer.husqvarnagroup.cloud' target='_blank'>здесь</a>. ",
+    "app_secret_hint": "Получите 'Husqvarna Automower Connect Application Secret' <a href='https://developer.husqvarnagroup.cloud' target='_blank'>здесь</a>. ",
     "note": "при сохранении адаптер немедленно перезагружается с новой конфигурацией."
 }
